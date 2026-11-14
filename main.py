@@ -1548,7 +1548,12 @@ def make_handler(state):
                 count = int(length) if length else 0
             except ValueError:
                 count = 0
-            raw = self.rfile.read(count) if count > 0 else b""
+            try:
+                raw = self.rfile.read(count) if count > 0 else b""
+            except OSError:
+                # Client went away mid-body: fall through to the clean 400
+                # below instead of dying unhandled without a response.
+                raw = b""
             try:
                 body = json.loads(raw.decode("utf-8"))
             except (ValueError, UnicodeDecodeError):
